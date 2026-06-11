@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.function.Supplier;
 
-import com.example.PostgresDatabaseProvider;
+import com.example.MySqlDatabaseProvider;
 import com.vaadin.flow.component.ai.provider.LLMProvider;
 import com.vaadin.flow.component.ai.provider.LangChain4JLLMProvider;
 import com.vaadin.flow.component.ClickEvent;
@@ -36,7 +36,7 @@ public class DashboardView extends VerticalLayout {
             + ".state";
 
     private final Dashboard dashboard;
-    private final PostgresDatabaseProvider databaseProvider;
+    private final MySqlDatabaseProvider databaseProvider;
     private final Supplier<LLMProvider> llmProviderFactory;
 
     private final DatePicker fromDateFilter = new DatePicker("From date");
@@ -51,7 +51,7 @@ public class DashboardView extends VerticalLayout {
 
         // One provider instance per view (i.e. per browser tab), so the
         // global filter values are isolated between user sessions
-        databaseProvider = new PostgresDatabaseProvider();
+        databaseProvider = new MySqlDatabaseProvider();
 
         var chatModel = OpenAiStreamingChatModel.builder()
                 .apiKey(System.getenv("OPENAI_API_KEY"))
