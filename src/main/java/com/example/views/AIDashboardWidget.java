@@ -141,6 +141,26 @@ public class AIDashboardWidget extends DashboardWidget {
         return type;
     }
 
+    /**
+     * Re-applies the controller's current state, re-running the widget's
+     * stored queries through the database provider. Used to reflect global
+     * filter changes deterministically, without an LLM round trip.
+     */
+    public void refresh() {
+        if (gridController != null) {
+            var state = gridController.getState();
+            if (state != null && state.query() != null) {
+                gridController.restoreState(state);
+            }
+        } else {
+            var state = chartController.getState();
+            if (state != null && state.queries() != null
+                    && !state.queries().isEmpty()) {
+                chartController.restoreState(state);
+            }
+        }
+    }
+
     public WidgetSnapshot snapshot() {
         return new WidgetSnapshot(type, getTitle(), getColspan(), getRowspan(),
                 gridController != null ? gridController.getState() : null,

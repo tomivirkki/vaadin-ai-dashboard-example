@@ -20,10 +20,12 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDate;
 
 /**
  * Creates demo tables and seeds sample data in the in-memory H2 database used
- * by {@link InMemoryDatabaseProvider}. Runs at most once per JVM.
+ * by {@link InMemoryDatabaseProvider}, plus the {@code FILTERED} shadow schema
+ * backing the global dashboard filters. Runs at most once per JVM.
  */
 final class DemoDataInitializer {
 
@@ -46,6 +48,7 @@ final class DemoDataInitializer {
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         "MONTH" VARCHAR(50) NOT NULL,
                         month_order INT NOT NULL,
+                        sale_date DATE NOT NULL,
                         revenue INT NOT NULL,
                         region VARCHAR(50) NOT NULL
                     )
@@ -72,7 +75,7 @@ final class DemoDataInitializer {
                     """);
 
             try (PreparedStatement pstmt = conn.prepareStatement(
-                    "INSERT INTO sales (\"MONTH\", month_order, revenue, region) VALUES (?, ?, ?, ?)")) {
+                    "INSERT INTO sales (\"MONTH\", month_order, sale_date, revenue, region) VALUES (?, ?, ?, ?, ?)")) {
                 insertSalesRow(pstmt, "January", 1, 45000, "North");
                 insertSalesRow(pstmt, "February", 2, 52000, "North");
                 insertSalesRow(pstmt, "March", 3, 58000, "North");
@@ -334,6 +337,8 @@ final class DemoDataInitializer {
                 insertExpenseRow(pstmt, "Content", "Marketing", 5000);
             }
 
+            createFilteredSchema(stmt);
+
             initialized = true;
 
         } catch (SQLException e) {
@@ -342,12 +347,53 @@ final class DemoDataInitializer {
         }
     }
 
+    /**
+     * Creates the {@code FILTERED} shadow schema: one view per table that the
+     * global dashboard filters apply to, under exactly the same name as the
+     * base table. Each view reads connection-scoped H2 user variables
+     * ({@code @from_date}, {@code @to_date}, {@code @regions}) which unset
+     * evaluate to NULL, i.e. "no filter". Combined with
+     * {@code SET SCHEMA_SEARCH_PATH filtered, public}, unqualified table names
+     * resolve to these views when one exists and fall back to the unfiltered
+     * PUBLIC base table otherwise. All statements are idempotent.
+     */
+    private static void createFilteredSchema(Statement stmt)
+            throws SQLException {
+        stmt.execute("CREATE SCHEMA IF NOT EXISTS filtered");
+
+        stmt.execute("""
+                CREATE OR REPLACE VIEW filtered.sales AS
+                SELECT * FROM public.sales
+                WHERE (@from_date IS NULL OR sale_date >= @from_date)
+                  AND (@to_date IS NULL OR sale_date <= @to_date)
+                  AND (@regions IS NULL OR ARRAY_CONTAINS(@regions, region))
+                """);
+
+        stmt.execute("""
+                CREATE OR REPLACE VIEW filtered.stock_prices AS
+                SELECT * FROM public.stock_prices
+                WHERE (@from_date IS NULL OR trade_date >= @from_date)
+                  AND (@to_date IS NULL OR trade_date <= @to_date)
+                """);
+
+        // A task is in range when its duration overlaps the selected range
+        stmt.execute("""
+                CREATE OR REPLACE VIEW filtered.project_tasks AS
+                SELECT * FROM public.project_tasks
+                WHERE (@from_date IS NULL OR end_date >= @from_date)
+                  AND (@to_date IS NULL OR start_date <= @to_date)
+                """);
+    }
+
     private static void insertSalesRow(PreparedStatement pstmt, String month,
             int monthOrder, int revenue, String region) throws SQLException {
         pstmt.setString(1, month);
         pstmt.setInt(2, monthOrder);
-        pstmt.setInt(3, revenue);
-        pstmt.setString(4, region);
+        // Representative sale date so global date-range filters apply
+        pstmt.setDate(3,
+                java.sql.Date.valueOf(LocalDate.of(2025, monthOrder, 15)));
+        pstmt.setInt(4, revenue);
+        pstmt.setString(5, region);
         pstmt.executeUpdate();
     }
 

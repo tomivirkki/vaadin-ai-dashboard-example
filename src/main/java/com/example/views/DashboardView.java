@@ -1,5 +1,6 @@
 package com.example.views;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -10,14 +11,17 @@ import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.contextmenu.HasMenuItems;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.dashboard.Dashboard;
+import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
@@ -35,11 +39,18 @@ public class DashboardView extends VerticalLayout {
     private final InMemoryDatabaseProvider databaseProvider;
     private final Supplier<LLMProvider> llmProviderFactory;
 
+    private final DatePicker fromDateFilter = new DatePicker("From date");
+    private final DatePicker toDateFilter = new DatePicker("To date");
+    private final CheckboxGroup<String> regionFilter = new CheckboxGroup<>(
+            "Regions");
+
     public DashboardView() {
         setSizeFull();
         setPadding(false);
         setSpacing(false);
 
+        // One provider instance per view (i.e. per browser tab), so the
+        // global filter values are isolated between user sessions
         databaseProvider = new InMemoryDatabaseProvider();
 
         var chatModel = OpenAiStreamingChatModel.builder()
@@ -71,12 +82,46 @@ public class DashboardView extends VerticalLayout {
         toolbar.setPadding(true);
         toolbar.setWidthFull();
 
-        add(toolbar, dashboard);
+        add(toolbar, createFilterBar(), dashboard);
         expand(dashboard);
 
         // Example widgets so the dashboard is not empty on first visit
         dashboard.add(DefaultWidgets.create(llmProviderFactory,
                 databaseProvider));
+    }
+
+    /**
+     * Builds the global filter toolbar. Every change pushes the new filter
+     * values into the database provider and re-applies the current state of
+     * each AI widget, re-running its stored queries against the filtered data
+     * — no LLM round trip involved.
+     */
+    private HorizontalLayout createFilterBar() {
+        fromDateFilter.setClearButtonVisible(true);
+        // The demo data lives in 2025, so open the calendars there
+        fromDateFilter.setInitialPosition(LocalDate.of(2025, 1, 1));
+        toDateFilter.setClearButtonVisible(true);
+        toDateFilter.setInitialPosition(LocalDate.of(2025, 1, 1));
+        regionFilter.setItems(databaseProvider
+                .executeQuery("SELECT DISTINCT region FROM sales ORDER BY region")
+                .stream().map(row -> (String) row.get("REGION")).toList());
+
+        fromDateFilter.addValueChangeListener(e -> applyFilters());
+        toDateFilter.addValueChangeListener(e -> applyFilters());
+        regionFilter.addValueChangeListener(e -> applyFilters());
+
+        var filterBar = new HorizontalLayout(fromDateFilter, toDateFilter,
+                regionFilter);
+        filterBar.setPadding(true);
+        filterBar.setWidthFull();
+        filterBar.setAlignItems(FlexComponent.Alignment.BASELINE);
+        return filterBar;
+    }
+
+    private void applyFilters() {
+        databaseProvider.setFilters(fromDateFilter.getValue(),
+                toDateFilter.getValue(), regionFilter.getValue());
+        aiWidgets().forEach(AIDashboardWidget::refresh);
     }
 
     private void addWidget(AIDashboardWidget.Type type) {

@@ -18,7 +18,8 @@ import com.vaadin.flow.component.dashboard.DashboardWidget;
 /**
  * Static factory for the example widgets shown on a freshly opened dashboard.
  * The widgets are created through the same restore path as AI-generated ones,
- * including a plausible chat history.
+ * including a plausible chat history, and their queries target the sales
+ * table so the global filter controls affect them.
  */
 final class DefaultWidgets {
 
@@ -65,21 +66,24 @@ final class DefaultWidgets {
                         chartConfiguration),
                 fakeHistory("Show monthly revenue by region as a column chart",
                         """
-                                I've created a column chart of the monthly \
-                                revenue with one column series per region."""));
+                                I've created a column chart of the monthly revenue \
+                                with one column series per region. It follows the \
+                                global dashboard filters, so you can narrow it down \
+                                by date range or region from the toolbar."""));
     }
 
     private static AIDashboardWidget.WidgetSnapshot gridSnapshot() {
         return new AIDashboardWidget.WidgetSnapshot(
                 AIDashboardWidget.Type.GRID, "Sales records", 1, 1,
                 new GridState("""
-                        SELECT "MONTH" AS "Month", region AS "Region", \
-                        revenue AS "Revenue" \
+                        SELECT "MONTH" AS "Month", sale_date AS "Sale Date", \
+                        region AS "Region", revenue AS "Revenue" \
                         FROM sales ORDER BY month_order, region"""),
                 null,
                 fakeHistory("List all sales records", """
-                        Here are all sales records with their month, region, \
-                        and revenue."""));
+                        Here are all sales records with their month, sale date, \
+                        region, and revenue. The grid follows the global \
+                        dashboard filters."""));
     }
 
     private static List<ChatMessage> fakeHistory(String userPrompt,
