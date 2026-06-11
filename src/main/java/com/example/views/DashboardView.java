@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.function.Supplier;
 
-import com.example.InMemoryDatabaseProvider;
+import com.example.PostgresDatabaseProvider;
 import com.vaadin.flow.component.ai.provider.LLMProvider;
 import com.vaadin.flow.component.ai.provider.LangChain4JLLMProvider;
 import com.vaadin.flow.component.ClickEvent;
@@ -36,7 +36,7 @@ public class DashboardView extends VerticalLayout {
             + ".state";
 
     private final Dashboard dashboard;
-    private final InMemoryDatabaseProvider databaseProvider;
+    private final PostgresDatabaseProvider databaseProvider;
     private final Supplier<LLMProvider> llmProviderFactory;
 
     private final DatePicker fromDateFilter = new DatePicker("From date");
@@ -51,7 +51,7 @@ public class DashboardView extends VerticalLayout {
 
         // One provider instance per view (i.e. per browser tab), so the
         // global filter values are isolated between user sessions
-        databaseProvider = new InMemoryDatabaseProvider();
+        databaseProvider = new PostgresDatabaseProvider();
 
         var chatModel = OpenAiStreamingChatModel.builder()
                 .apiKey(System.getenv("OPENAI_API_KEY"))
@@ -104,7 +104,7 @@ public class DashboardView extends VerticalLayout {
         toDateFilter.setInitialPosition(LocalDate.of(2025, 1, 1));
         regionFilter.setItems(databaseProvider
                 .executeQuery("SELECT DISTINCT region FROM sales ORDER BY region")
-                .stream().map(row -> (String) row.get("REGION")).toList());
+                .stream().map(row -> (String) row.get("region")).toList());
 
         fromDateFilter.addValueChangeListener(e -> applyFilters());
         toDateFilter.addValueChangeListener(e -> applyFilters());
