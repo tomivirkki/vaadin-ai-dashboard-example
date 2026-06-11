@@ -16,13 +16,15 @@ the visualization, drill into a slice, and the widget updates itself.
 - **Global filters** — a date-range + region toolbar that filters every AI
   widget at once, including aggregating and multi-table queries. Filters are
   isolated per user session and applied without an LLM round trip: queries
-  run against a `FILTERED` shadow schema of H2 views that read
-  connection-scoped user variables, and each widget simply re-runs its
-  stored SQL unchanged.
-- **In-memory H2 database** — seeded with a dozen demo tables (sales,
-  employees, products, stocks, project tasks, org chart, energy flow,
-  traffic heatmap, budget, sales pipeline, KPIs, expenses) covering the
-  data shapes for most chart types.
+  run against a `filtered` shadow schema of PostgreSQL views that read
+  connection-scoped session settings (`current_setting`), and each widget
+  simply re-runs its stored SQL unchanged.
+- **Embedded PostgreSQL database** — a real PostgreSQL server started
+  automatically as a child process (no Docker or local installation
+  needed), seeded with a dozen demo tables (sales, employees, products,
+  stocks, project tasks, org chart, energy flow, traffic heatmap, budget,
+  sales pipeline, KPIs, expenses) covering the data shapes for most chart
+  types.
 - **Save/restore state** — snapshot dashboard layout, widget state, and
   chat history into the Vaadin session.
 - **Pluggable LLM** — currently wired to OpenAI via LangChain4J; swap the
@@ -52,7 +54,7 @@ region"_ or _"top 5 products by units sold"_.
 ```
 src/main/java/com/example/
 ├── Application.java                 Spring Boot entry point
-├── InMemoryDatabaseProvider.java    H2-backed DatabaseProvider
+├── PostgresDatabaseProvider.java    Embedded-PostgreSQL DatabaseProvider
 ├── DemoDataInitializer.java         Schema + seed data
 └── views/
     ├── DashboardView.java           Top-level @Route("dashboard")
