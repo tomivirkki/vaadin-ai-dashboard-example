@@ -73,6 +73,10 @@ public class DashboardView extends VerticalLayout {
 
         add(toolbar, dashboard);
         expand(dashboard);
+
+        // Example widgets so the dashboard is not empty on first visit
+        dashboard.add(DefaultWidgets.create(llmProviderFactory,
+                databaseProvider));
     }
 
     private void addWidget(AIDashboardWidget.Type type) {
