@@ -16,15 +16,16 @@ the visualization, drill into a slice, and the widget updates itself.
 - **Global filters** — a date-range + region toolbar that filters every AI
   widget at once, including aggregating and multi-table queries. Filters are
   isolated per user session and applied without an LLM round trip: queries
-  run against a `filtered` shadow schema of PostgreSQL views that read
-  connection-scoped session settings (`current_setting`), and each widget
-  simply re-runs its stored SQL unchanged.
-- **Embedded PostgreSQL database** — a real PostgreSQL server started
-  automatically as a child process (no Docker or local installation
-  needed), seeded with a dozen demo tables (sales, employees, products,
-  stocks, project tasks, org chart, energy flow, traffic heatmap, budget,
-  sales pipeline, KPIs, expenses) covering the data shapes for most chart
-  types.
+  run against a `filtered` shadow database of MySQL views whose predicates
+  read connection-scoped session variables through small stored functions,
+  and each widget simply re-runs its stored SQL unchanged.
+- **MySQL database (embedded MariaDB)** — the demo starts a private MariaDB
+  server (a drop-in MySQL replacement) as a child process with a temporary
+  data directory: no Docker and no database service to manage, only the
+  server binaries need to be installed. Seeded with a dozen demo tables
+  (sales, employees, products, stocks, project tasks, org chart, energy
+  flow, traffic heatmap, budget, sales pipeline, KPIs, expenses) covering
+  the data shapes for most chart types.
 - **Save/restore state** — snapshot dashboard layout, widget state, and
   chat history into the Vaadin session.
 - **Pluggable LLM** — currently wired to OpenAI via LangChain4J; swap the
@@ -35,6 +36,9 @@ the visualization, drill into a slice, and the widget updates itself.
 - Java 21
 - A Vaadin Pro/Trial license
 - An OpenAI API key in `OPENAI_API_KEY`
+- MariaDB or MySQL server binaries on the machine, e.g.
+  `sudo apt-get install mariadb-server` (the app runs its own private
+  instance; no service setup needed)
 
 ## Run
 
@@ -54,7 +58,8 @@ region"_ or _"top 5 products by units sold"_.
 ```
 src/main/java/com/example/
 ├── Application.java                 Spring Boot entry point
-├── PostgresDatabaseProvider.java    Embedded-PostgreSQL DatabaseProvider
+├── MySqlDatabaseProvider.java       MySQL-dialect DatabaseProvider
+├── EmbeddedMariaDb.java             Private MariaDB server lifecycle
 ├── DemoDataInitializer.java         Schema + seed data
 └── views/
     ├── DashboardView.java           Top-level @Route("dashboard")
