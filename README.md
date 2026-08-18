@@ -17,6 +17,13 @@ the visualization, drill into a slice, and the widget updates itself.
   employees, products, stocks, project tasks, org chart, energy flow,
   traffic heatmap, budget, sales pipeline, KPIs, expenses) covering the
   data shapes for most chart types.
+- **PDF reports** — ask any widget's chat for the data as a PDF and
+  describe the format you want; the LLM authors only a report *template*
+  (HTML with SQL directives and `{{column}}` placeholders), and the server
+  executes the queries, fills in the data, and renders the PDF
+  (openhtmltopdf) with company branding — logo, contact details — and
+  ZXing-generated barcodes/QR codes. The report data never enters the LLM
+  context; the download starts in the browser.
 - **Save/restore state** — snapshot dashboard layout, widget state, and
   chat history into the Vaadin session.
 - **Pluggable LLM** — currently wired to OpenAI via LangChain4J; swap the
@@ -47,11 +54,21 @@ src/main/java/com/example/
 ├── Application.java                 Spring Boot entry point
 ├── InMemoryDatabaseProvider.java    H2-backed DatabaseProvider
 ├── DemoDataInitializer.java         Schema + seed data
+├── reports/
+│   ├── PdfReportTools.java          LLM tool: create PDF from a template
+│   ├── PdfReportGenerator.java      SQL-templated HTML → PDF, server-side
+│   └── ReportBranding.java          Company name, contacts, logo
 └── views/
     ├── DashboardView.java           Top-level @Route("dashboard")
     ├── AIDashboardWidget.java       Grid/chart widget + orchestrator
     └── ChatLayouts.java             Chat layout factory
 ```
+
+The demo branding (logo in `src/main/resources/reports/logo.png`, contact
+details in `ReportBranding.DEMO`) is what the LLM applies to reports by
+default; the user's formatting wishes in the chat take precedence. Try
+_"give me this data as a PDF invoice-style report with a QR code to the
+order page"_.
 
 ## Notes
 

@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import com.example.reports.PdfReportTools;
+import com.example.reports.ReportBranding;
 import com.vaadin.flow.component.ai.chart.ChartAIController;
 import com.vaadin.flow.component.ai.chart.ChartState;
 import com.vaadin.flow.component.ai.common.ChatMessage;
@@ -122,13 +124,18 @@ public class AIDashboardWidget extends DashboardWidget {
             }
         });
 
-        setHeaderContent(new Div(chatButton, popover));
+        var headerContent = new Div(chatButton, popover);
+        setHeaderContent(headerContent);
+
+        var reportTools = new PdfReportTools(databaseProvider, headerContent,
+                ReportBranding.DEMO);
+        systemPrompt += "\n\n" + reportTools.getSystemPrompt();
 
         var provider = llmProviderFactory.get();
         var builder = AIOrchestrator.builder(provider, systemPrompt)
                 .withMessageList(messageList).withInput(messageInput)
                 .withFileReceiver(uploadManager)
-                .withTools(this)
+                .withTools(this, reportTools)
                 .withController(type == Type.GRID ? gridController
                         : chartController);
         if (history != null && !history.isEmpty()) {
