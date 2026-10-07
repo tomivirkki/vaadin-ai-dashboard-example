@@ -16,7 +16,9 @@ the visualization, drill into a slice, and the widget updates itself.
 - **In-memory H2 database** — seeded with a dozen demo tables (sales,
   employees, products, stocks, project tasks, org chart, energy flow,
   traffic heatmap, budget, sales pipeline, KPIs, expenses) covering the
-  data shapes for most chart types.
+  data shapes for most chart types. When a query fails, the reason is
+  relayed to the LLM through a `ToolException` so it can fix the query,
+  except for errors whose message could quote values from the rows.
 - **Save/restore state** — snapshot dashboard layout, widget state, and
   chat history into the Vaadin session.
 - **Pluggable LLM** — currently wired to OpenAI via LangChain4J; swap the
