@@ -18,7 +18,8 @@ import com.vaadin.flow.component.dashboard.DashboardWidget;
 /**
  * Static factory for the example widgets shown on a freshly opened dashboard.
  * The widgets are created through the same restore path as AI-generated ones,
- * including a plausible chat history.
+ * including a plausible chat history and the chart configuration the LLM would
+ * have set.
  */
 final class DefaultWidgets {
 
@@ -62,7 +63,9 @@ final class DefaultWidgets {
                         FROM sales
                         GROUP BY "MONTH", month_order, region
                         ORDER BY month_order, region"""),
-                        chartConfiguration),
+                        // Holds nothing from the query results, so the LLM
+                        // can be shown all of it
+                        chartConfiguration, chartConfiguration),
                 fakeHistory("Show monthly revenue by region as a column chart",
                         """
                                 I've created a column chart of the monthly \
