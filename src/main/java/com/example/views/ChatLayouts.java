@@ -3,7 +3,6 @@ package com.example.views;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.messages.MessageInput;
 import com.vaadin.flow.component.messages.MessageList;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.upload.UploadButton;
@@ -54,7 +53,6 @@ final class ChatLayouts {
 
         var inputLayout = new HorizontalLayout(uploadButton, messageInput);
         inputLayout.setWidthFull();
-        inputLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
         inputLayout.setFlexGrow(1.0, messageInput);
 
         var bottomLayout = new VerticalLayout(uploadFileList, inputLayout);
